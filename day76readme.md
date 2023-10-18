@@ -108,17 +108,125 @@ fig.show()
 `
 2. cast as int
 `app_installs_int = app_installs_no_comma.astype(int)`
+or `pd._to_numeric(column)`
 
 #datatype
 Use `.describe()` on the dataframe or `.info()` on the dataframe or column
 
 Achieve the same results with `.groupby()`
 
+>If we take two of the columns, say Installs and the App name, we can count the number of entries per level of installations with `.groupby()` and `.count()`. However, because we are dealing with a non-numeric data type, the ordering is not helpful. The reason Python is not recognising our installs as numbers is because of the commas.
+
+```python
+# Exclude apps that cost over $250.
+df_apps_sub250 = df_apps_num_price[df_apps_num_price.Price < 250]
+# Check type of columns
+df_apps_sub250.info()
+# remove non-numeric characters from the Installs columns
+df_apps_sub250.Installs = df_apps_sub250.Installs.str.replace(",", "")
+# cast the Installs column to int64
+df_apps_sub250.Installs = pd.to_numeric(df_apps_sub250.Installs)
+# verify type conversion
+df_apps_sub250.Installs.info()
+# Count the number of apps for ever Installation level.
+df_apps_sub250.groupby("Installs")["App"].count()
+
+```
+alt: `df_apps_clean[['App', 'Installs']].groupby('Installs').count()`
+
 ## Multiplying two columns
 * You can use .mul(col2)  or *
 
 ```
-df_apps_sub250["Total Revenue"] = pd.to_numeric(df_apps_clean_no_dupes["Installs"].str.replace(",", "")) * df_apps_clean_no_dupes["Price"]
+df_apps_sub250["total revenue"] = pd.to_numeric(df_apps_clean_no_dupes["installs"].str.replace(",", "")) * df_apps_clean_no_dupes["price"]
 df_apps_sub250.sort_values(by="Total Revenue", ascending=False).head(10)[df_apps_sub250.Category == "GAME"]
 ```
 
+## Plotly Charts: Bar and Scatter
+
+* Find the number of different categories:
+`df_apps_clean.Category.nunique()`
+* Find the 10 most common categories:
+`top_10_categories = df_apps_sub250.value_counts(subset=df_apps_sub250.Category).sort_values(ascending=False)[:10]` or `df_apps_sub250.Category.value_counts()[:10]`
+
+### [Bar Chart](https://plotly.com/python-api-reference/generated/plotly.express.bar.html?highlight=express%20bar#plotly.express.bar)
+
+#### Vertical
+
+`px.bar()`
+
+```python
+bar_fig = px.bar(x=top_10_categories.index, y=top_10_categories.values)
+bar_fig.show()
+```
+
+#### Horizontal
+```python
+horizontal_bar = bar_fig.update_traces(orientation = 'h', x=top_10_categories.values, y=top_10_categories.index)
+horizontal_bar.show()
+```
+### How often are apps downloaded in that category?
+
+
+[.agg()](obsidian://open?vault=Obsidian%20Vault&file=100%20Days%20Of%20Code%2Fday74readme)
+>
+`.agg()` takes a dictionary as an argument. In this dictionary, we specify which operation we'd like to apply to each column. In our case, we just want to calculate the number of unique entries in the theme_id column by using our old friend, the `.nunique()` method.
+
+```python
+most_downloaded_cats = df_apps_sub250.groupby("Category").agg({"Installs": pd.Series.sum}).sort_values(by="Installs", ascending=True)
+
+
+h_bar = px.bar(orientation='h', y=most_downloaded_cats.index, x=most_downloaded_cats.Installs.values)
+h_bar.show()
+```
+
+### Create a Dataframe that has the number of installs in one column and the number of apps in the other
+
+
+```python
+df_inst_apps = df_apps_sub250.groupby("Category").agg({"Installs": pd.Series.sum, "App": pd.Series.count})
+df_inst_apps.sort_values(by="Installs", ascending=False)
+```
+
+`.agg()` return a DataFrame from a groupby object.
+
+### Show the install concentration with a scatter plot
+
+```python
+df_inst_apps = df_apps_sub250.groupby("Category").agg({"Installs": pd.Series.sum, "App": pd.Series.count})
+df_inst_apps.sort_values(by="Installs", ascending=False, inplace=True)
+scat = px.scatter(df_inst_apps, x="App", y="Installs", size="App",
+                 color="Installs",
+                 hover_name = df_inst_apps.index,
+                 labels={"App": "Number of Apps (Lower=More Concentrated)"})
+scat.update_layout(yaxis=dict(type='log'),
+                  title="Category Concentration")
+
+```
+
+
+**Solution**
+```python
+cat_number = df_apps_clean.groupby('Category').agg({'App': pd.Series.count})
+# Merge this with out earlier cat_instals dataframe
+cat_merged_df = pd.merge(cat_number, category_installs, on='Category', how="inner")
+# Sort the merged df
+cat_merged_df.sort_values(by='Installs', ascending=False)
+# Create the chart
+scatter = px.scatter(cat_merged_df,
+					x = 'App',
+					y = 'Installs',
+					title='Category Concentration',
+					size='App',
+					hover_name=cat_merged_df.index,
+					color='Installs' 
+					)
+scatter.update_layout(xaxis_title="Number of Apps (Lower=More Concentrated)",
+					  y_axis_title="Installs",
+					  yaxis=dict(type='log')
+					 )
+scatter.show()
+
+```
+
+## Extracting Nested Data From a Column
