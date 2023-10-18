@@ -87,7 +87,38 @@ df_apps_nd.Content_Rating.value_counts()
 
 #### Import Plotly
 `import plotly.express as px`
-show the above as a pie chart:
+show the above as a [pie chart](https://plotly.com/python-api-reference/generated/plotly.express.pie.html):
 ```
-px.pie(df_apps_nd, values=df_apps_nd.Content_Rating.value_counts(), names=df_apps_nd.Content_Rating.unique(), title="Content Rating Distribution").show()
+px.pie(values=None, names=None)
+
+fig = px.pie(df_apps_nd, values=df_apps_nd.Content_Rating.value_counts(), names=df_apps_nd.Content_Rating.unique(), title="Content Rating Distribution").show()
 ```
+
+Use `update_traces()` to modify chart style
+```python
+fig.update_traces(textposition="outside",
+textinfo="percent+label")
+fig.show()
+```
+
+## Converting a string column to int
+
+1. remove non numeric characters with the string attribute:
+`app_installs_no_comma = app_installs.str.replace(",", "")
+`
+2. cast as int
+`app_installs_int = app_installs_no_comma.astype(int)`
+
+#datatype
+Use `.describe()` on the dataframe or `.info()` on the dataframe or column
+
+Achieve the same results with `.groupby()`
+
+## Multiplying two columns
+* You can use .mul(col2)  or *
+
+```
+df_apps_sub250["Total Revenue"] = pd.to_numeric(df_apps_clean_no_dupes["Installs"].str.replace(",", "")) * df_apps_clean_no_dupes["Price"]
+df_apps_sub250.sort_values(by="Total Revenue", ascending=False).head(10)[df_apps_sub250.Category == "GAME"]
+```
+
