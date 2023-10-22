@@ -230,3 +230,67 @@ scatter.show()
 ```
 
 ## Extracting Nested Data From a Column
+
+call `.stack()` on a Series with nested values:
+
+```python
+df = df_apps_clean_no_dupes
+# defining a new series from the Genres column, where values containing multiple genres (separated by a ';', are converted to a list of strings. )
+# stack will create a new row for every item  in the list
+genre_stack = df.Genres.str.split(';', expand=True).stack()
+type(genre_stack[21])  # series
+type(genre_stack)  # series
+# return a series where the index is the values from genre_stack and the values are the number of times those values occur.
+genre_stack.value_counts().values
+```
+
+### Turn it into a colorful bar chart
+
+```python
+data = genre_stack.value_counts()  # Series where index is genre and value is number of occurrences
+data.sort_values()
+top_15_genres = data[:15]
+x_axis = top_15_genres.index
+y_axis = top_15_genres.values
+fig = px.bar(data_frame=top_15_genres, x=x_axis, y=y_axis, color=y_axis, color_continuous_scale=px.colors.sequential.Agsunset)
+fig.update_coloraxes(showscale=False)
+fig.show()
+```
+
+output (fig.update_coloraxes(showscale=True)):
+<img src="C:\Users\Mourn\Documents\Obsidian Vault\100 Days Of Code\day76_genrecount_bar.png"/>
+
+##### Solution
+```python
+bar = px.bar(x=num_genres.index[:15],
+			y=num_genres.values[:15],
+			title='Top Genres',
+			hover_name=num_genres.indx[15],
+			color=num_genres.values[:15],
+			color_conrinuous_scale='Agsunset')
+bar.update_layout(xaxis_title='Genre',
+				 yaxis_title='Number of Apps',
+				 coloraxis_showscale=False)
+bar.show()
+```
+
+## Grouped Bar Charts
+
+Now that we've looked at the total number of apps per category and the total number of apps per genre, let's see what the split is between free and paid apps.
+
+`df_apps_clean.Type.value_count()`
+> The number of apps that fall into either type, 'Paid' or 'Free'
+
+Let's investigate whether some categories have more paid apps than others.
+
+* Group data by category then by type
+* Add up the number of apps per each type
+* set `as_index=False` so we push all the data into columns rather than end up with our Categories as the index.
+
+```python
+df_apps_clean_no_dupes.Type.value_counts()
+df = df_apps_clean_no_dupes
+df.Category.value_counts()
+df.groupby(["Category", "Type"], as_index=False).agg({"App": pd.Series.count})
+```
+
