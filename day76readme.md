@@ -294,3 +294,41 @@ df.Category.value_counts()
 df.groupby(["Category", "Type"], as_index=False).agg({"App": pd.Series.count})
 ```
 
+### Categorical Axes
+
+https://plotly.com/python/categorical-axes/#automatically-sorting-categories-by-name-or-total-value
+
+### Solution
+
+The key is using the `color` and `barmode` parameters of `.bar()` To get a particular order, pass a dictionary to the axis parameter is `.update_layout()`
+
+```python
+g_bar = px.bar(df_free_vs_paid,
+			  x='Category',
+			  y='App',
+			  title='Free Vs Paid Apps By Category',
+			  color='Type',
+			  barmode='group')
+g_bar.update_layout(xaxis_title='Category',
+				   yaxis_title='Number of Apps',
+				   xaxis={'categoryorder': 'total descending'},
+				   yaxis=dict(type='log'))
+```
+
+I was missing the need for using color as a third axis to differentiate between the types!!
+
+mine:
+
+```python
+paid_x = df_free_vs_paid.Category[df_free_vs_paid.Type == "Paid"]
+free_x = df_free_vs_paid.Category[df_free_vs_paid.Type == "Free"]
+fig = px.bar(data_frame=df_free_vs_paid.sort_values(by="App"),
+             x="Category",
+             y="App",
+             color="Type",
+             category_orders={"Type": ["Free", "Paid"]},
+             barmode="group", log_y=True)
+fig.update_xaxes(categoryorder='total descending')
+# fig.update_layout(category_orders={"Type": ["Free", "Paid"]})
+fig.show()
+```
