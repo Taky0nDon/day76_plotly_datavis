@@ -332,3 +332,48 @@ fig.update_xaxes(categoryorder='total descending')
 # fig.update_layout(category_orders={"Type": ["Free", "Paid"]})
 fig.show()
 ```
+
+<img src='C:\Users\Mourn\Documents\Obsidian Vault\100 Days Of Code\paidvsfree_byappcategor.png'/>
+
+
+## Box Plots
+
+Box plots show us some handy descriptive statistics in a graph - things like the median value, the maximum value, the minimum value, and some quartiles. 
+
+### Challenge
+* Create a box plot that shows the number of Installs for free vs paid apps. 
+* How does the median number of installations compare
+* is the difference large or small?
+* Hover text should show median revenue for category
+* use 'min ascending' to sort the categories
+
+Use the [Box Plots Guide](https://plotly.com/python/box-plots/) and the [.box API reference](https://plotly.com/python-api-reference/generated/plotly.express.box.html)
+
+### Installs with respect to app type:
+
+```python
+fig = px.box(data_frame=df_apps_clean_no_dupes,
+            x="Type",
+            y="Installs",
+            color="Type",
+            points="all",
+             notched=True,
+            log_y=True)
+fig.show()
+```
+
+![[Installs_freevspaid.png]]
+
+#### Goal
+
+![[v4CiNqX 1.png]]
+
+
+```python
+fig = px.box(data_frame=df_apps_clean_no_dupes[df_apps_clean_no_dupes.Type == "Paid"],
+            x="Category",
+            y="Total Revenue",
+            log_y=True)
+fig.update_layout(xaxis={'categoryorder': 'min ascending'})
+fig.show()
+```
